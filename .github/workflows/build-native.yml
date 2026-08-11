@@ -1,0 +1,59 @@
+name: Build Native foo_folderopen
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Download official foobar2000 SDK
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://www.foobar2000.org/downloads/SDK-2025-03-07.7z" `
+            -OutFile "foobar-sdk.7z"
+          7z x foobar-sdk.7z -osdk -y
+
+      - name: Show SDK layout
+        shell: pwsh
+        run: |
+          Get-ChildItem sdk
+          Get-ChildItem sdk\foobar2000
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build x64 Release
+        shell: pwsh
+        run: |
+          msbuild foo_folderopen.sln /m /p:Configuration=Release /p:Platform=x64
+
+      - name: Package fb2k-component
+        shell: pwsh
+        run: |
+          if (!(Test-Path "out\x64\foo_folderopen.dll")) {
+            throw "Built DLL not found."
+          }
+
+          if (Test-Path stage) { Remove-Item stage -Recurse -Force }
+          New-Item -ItemType Directory -Path "stage\x64" | Out-Null
+          Copy-Item "out\x64\foo_folderopen.dll" "stage\x64\foo_folderopen.dll"
+
+          if (Test-Path foo_folderopen.zip) { Remove-Item foo_folderopen.zip -Force }
+          if (Test-Path foo_folderopen.fb2k-component) { Remove-Item foo_folderopen.fb2k-component -Force }
+
+          7z a -tzip foo_folderopen.zip ".\stage\x64\foo_folderopen.dll"
+          Rename-Item foo_folderopen.zip foo_folderopen.fb2k-component
+
+      - name: Upload component
+        uses: actions/upload-artifact@v4
+        with:
+          name: foo_folderopen-native-x64
+          path: foo_folderopen.fb2k-component
