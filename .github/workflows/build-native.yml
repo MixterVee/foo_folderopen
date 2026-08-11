@@ -13,10 +13,10 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-       - name: Get foobar2000 SDK
+      - name: Get foobar2000 SDK
         shell: pwsh
         run: |
-          git clone --depth 1 --branch SDK-2025-03-07 https://github.com/reupen/foobar2000-sdk-unmodified.git sdk
+          git clone --depth 1 https://github.com/reupen/foobar2000-sdk-unmodified.git sdk
 
       - name: Show SDK layout
         shell: pwsh
@@ -41,6 +41,14 @@ jobs:
 
           New-Item -ItemType Directory -Path "stage\x64" -Force | Out-Null
           Copy-Item "out\x64\foo_folderopen.dll" "stage\x64\foo_folderopen.dll"
+
+          if (Test-Path "foo_folderopen.zip") {
+            Remove-Item "foo_folderopen.zip" -Force
+          }
+
+          if (Test-Path "foo_folderopen.fb2k-component") {
+            Remove-Item "foo_folderopen.fb2k-component" -Force
+          }
 
           7z a -tzip foo_folderopen.zip ".\stage\x64\foo_folderopen.dll"
           Rename-Item foo_folderopen.zip foo_folderopen.fb2k-component
