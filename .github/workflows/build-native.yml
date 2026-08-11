@@ -27,10 +27,19 @@ jobs:
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Build x64 Release
+            - name: Build SDK libraries
         shell: pwsh
         run: |
-          msbuild foo_folderopen.sln /m /p:Configuration=Release /p:Platform=x64
+          msbuild sdk\pfc\pfc.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$PWD\sdk\pfc\x64\Release\"
+
+          msbuild sdk\foobar2000\SDK\foobar2000_SDK.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$PWD\sdk\foobar2000\SDK\x64\Release\"
+
+          msbuild sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$PWD\sdk\foobar2000\foobar2000_component_client\x64\Release\"
+
+      - name: Build foo_folderopen
+        shell: pwsh
+        run: |
+          msbuild foo_folderopen.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:BuildProjectReferences=false
 
       - name: Package fb2k-component
         shell: pwsh
