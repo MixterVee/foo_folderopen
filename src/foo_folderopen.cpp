@@ -87,7 +87,7 @@ std::vector<std::wstring> enumerate_audio_files(const std::wstring& folder) {
     return result;
 }
 
-class folderopen_callback final : public play_callback_static {
+class folderopen_callback : public play_callback_static {
 public:
     unsigned get_flags() override {
         return flag_on_playback_new_track;
@@ -155,9 +155,16 @@ public:
             );
 
             pm->playlist_set_focus_item(playlist, clickedIndex);
-            pm->playlist_set_selection(playlist, bit_array_true(), false);
-            pm->playlist_set_selection(playlist, bit_array_one(clickedIndex), true);
-
+           pm->playlist_set_selection(
+    playlist,
+    bit_array_true(),
+    bit_array_false()
+);
+pm->playlist_set_selection(
+    playlist,
+    bit_array_one(clickedIndex),
+    bit_array_true()
+);
             // Same action foobar normally performs when a playlist row is double-clicked.
             pm->playlist_execute_default_action(playlist, clickedIndex);
         }
