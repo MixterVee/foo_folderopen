@@ -60,14 +60,30 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
 
-    <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Windows</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <AdditionalDependencies>sdk\foobar2000\shared\shared-$(Platform).lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+   <Link>
+  <GenerateDebugInformation>true</GenerateDebugInformation>
+  <SubSystem>Windows</SubSystem>
+  <OptimizeReferences>true</OptimizeReferences>
+  <EnableCOMDATFolding>true</EnableCOMDATFolding>
+  <RandomizedBaseAddress>false</RandomizedBaseAddress>
+
+  <AdditionalLibraryDirectories>
+    sdk\foobar2000\SDK\x64\Release;
+    sdk\foobar2000\foobar2000_component_client\x64\Release;
+    sdk\pfc\x64\Release;
+    sdk\foobar2000\shared;
+    %(AdditionalLibraryDirectories)
+  </AdditionalLibraryDirectories>
+
+  <AdditionalDependencies>
+    foobar2000_SDK.lib;
+    foobar2000_component_client.lib;
+    pfc.lib;
+    shared-x64.lib;
+    shlwapi.lib;
+    %(AdditionalDependencies)
+  </AdditionalDependencies>
+</Link>
   </ItemDefinitionGroup>
 
   <ItemGroup>
