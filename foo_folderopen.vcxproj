@@ -61,10 +61,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="sdk\pfc\pfc.vcxproj" />
-    <ProjectReference Include="sdk\foobar2000\SDK\foobar2000_SDK.vcxproj" />
-    <ProjectReference Include="sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj" />
-  </ItemGroup>
+  <ProjectReference Include="sdk\pfc\pfc.vcxproj">
+    <Project>{EBFFFB4E-261D-44D3-B89C-957B31A0BF9C}</Project>
+    <LinkLibraryDependencies>true</LinkLibraryDependencies>
+  </ProjectReference>
+
+  <ProjectReference Include="sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj">
+    <Project>{71AD2674-065B-48F5-B8B0-E1F9D3892081}</Project>
+    <LinkLibraryDependencies>true</LinkLibraryDependencies>
+  </ProjectReference>
+
+  <ProjectReference Include="sdk\foobar2000\SDK\foobar2000_SDK.vcxproj">
+    <Project>{E8091321-D79D-4575-86EF-064EA1A4A20D}</Project>
+    <LinkLibraryDependencies>true</LinkLibraryDependencies>
+  </ProjectReference>
+</ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
