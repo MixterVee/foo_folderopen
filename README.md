@@ -1,42 +1,42 @@
-# FolderOpen prototype
+# foo_folderopen
 
-A small Windows launcher for testing the requested foobar2000 workflow:
+Native foobar2000 component prototype.
 
-1. Double-click one audio file in Windows Explorer.
-2. FolderOpen passes that file's **containing folder** to foobar2000.
-3. foobar2000 populates the playlist with the folder.
-4. FolderOpen then asks foobar2000 to run its **Play** context command on the originally clicked file.
+## Intended behavior
 
-The important part of this prototype is step 4. It tests whether the built-in
-`/context_command:"Play"` route can start the clicked track while leaving the
-folder playlist intact. If it does, no custom foobar SDK component is needed.
+When Windows Explorer opens one audio file in foobar2000:
 
-## Build automatically on GitHub
+1. foobar2000 starts the selected file normally.
+2. `foo_folderopen` notices that the active playlist contains exactly one item.
+3. It scans that item's folder.
+4. It replaces the one-item playlist with the other audio files in that folder.
+5. It keeps the originally opened file selected and starts it again.
 
-Upload this project to your repository. Open the **Actions** tab and run
-**Build FolderOpen**, or simply push a commit. When the run finishes, download
-the `FolderOpen-win-x64` artifact.
+No helper EXE is required.
 
-## First test (do NOT change Windows file associations yet)
+## Prototype limitation
 
-1. Extract `FolderOpen.exe`.
-2. Drag an MP3/FLAC/etc. from a multi-song folder onto `FolderOpen.exe`.
-3. Expected result:
-   - foobar2000's playlist contains the whole folder;
-   - the dragged song becomes the playing song.
+Version 0.1 intentionally uses a conservative list of common audio extensions.
+It also expands any *one-item active playlist when playback begins*, not only
+Explorer launches. That distinction can be tightened later if needed.
 
-If foobar loads the folder but plays the wrong track, try a longer delay:
+## Build
 
-    set FOLDEROPEN_DELAY_MS=1500
-    FolderOpen.exe "D:\Music\Album\05 - Song.flac"
+The GitHub Actions workflow downloads the official foobar2000 SDK 2025-03-07
+and builds an x64 component with Visual Studio/MSBuild.
 
-If foobar is installed somewhere unusual:
+The build artifact is:
 
-    set FOLDEROPEN_FOOBAR=C:\Path\To\foobar2000.exe
-    FolderOpen.exe "D:\Music\Album\05 - Song.flac"
+`foo_folderopen.fb2k-component`
 
-## Important
+## Test
 
-This is deliberately a feasibility prototype, not an installer. Do not make it
-the default app for your music files until the two-stage behavior is confirmed
-on your foobar2000 v2.25.x setup.
+Install the component in:
+
+`foobar2000 > File > Preferences > Components > Install...`
+
+Restart foobar2000.
+
+Then double-click a song in Windows Explorer from a folder containing several
+audio files. The entire folder should appear in the playlist, while the song
+you double-clicked remains the playing track.
