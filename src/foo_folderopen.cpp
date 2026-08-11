@@ -113,10 +113,24 @@ public:
         const std::wstring clicked = utf8_to_wide(track->get_path());
         if (clicked.empty()) return;
 
-        // Skip streams / non-local paths.
-        if (clicked.find(L"://") != std::wstring::npos) return;
+       // Allow local file:// paths, but ignore other URI-style streams.
+if (clicked.find(L"://") != std::wstring::npos &&
+    clicked.rfind(L"file://", 0) != 0) {
+    return;
+}
 
-        const std::wstring folder = parent_folder(clicked);
+// Convert foobar's file:// path to a normal Windows path.
+std::wstring localPath = clicked;
+
+if (localPath.rfind(L"file://", 0) == 0) {
+    localPath.erase(0, 7);
+}
+
+while (!localPath.empty() && localPath.front() == L'/') {
+    localPath.erase(localPath.begin());
+}
+
+        const std::wstring folder = parent_folder(localPath);
         if (folder.empty()) return;
 
         const auto files = enumerate_audio_files(folder);
@@ -134,7 +148,7 @@ public:
             db->handle_create(h, make_playable_location(utf8.c_str(), 0));
             if (h.is_empty()) continue;
 
-            if (_wcsicmp(file.c_str(), clicked.c_str()) == 0) {
+            if (_wcsicmp(file.c_str(), localPath.c_str()) == 0) {
                 clickedIndex = handles.get_count();
             }
             handles.add_item(h);
