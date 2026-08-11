@@ -13,13 +13,10 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Download official foobar2000 SDK
+       - name: Get foobar2000 SDK
         shell: pwsh
         run: |
-          Invoke-WebRequest `
-            -Uri "https://www.foobar2000.org/downloads/SDK-2025-03-07.7z" `
-            -OutFile "foobar-sdk.7z"
-          7z x foobar-sdk.7z -osdk -y
+          git clone --depth 1 --branch SDK-2025-03-07 https://github.com/reupen/foobar2000-sdk-unmodified.git sdk
 
       - name: Show SDK layout
         shell: pwsh
