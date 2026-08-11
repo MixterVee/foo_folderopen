@@ -42,12 +42,8 @@ jobs:
             throw "Built DLL not found."
           }
 
-          if (Test-Path stage) { Remove-Item stage -Recurse -Force }
-          New-Item -ItemType Directory -Path "stage\x64" | Out-Null
+          New-Item -ItemType Directory -Path "stage\x64" -Force | Out-Null
           Copy-Item "out\x64\foo_folderopen.dll" "stage\x64\foo_folderopen.dll"
-
-          if (Test-Path foo_folderopen.zip) { Remove-Item foo_folderopen.zip -Force }
-          if (Test-Path foo_folderopen.fb2k-component) { Remove-Item foo_folderopen.fb2k-component -Force }
 
           7z a -tzip foo_folderopen.zip ".\stage\x64\foo_folderopen.dll"
           Rename-Item foo_folderopen.zip foo_folderopen.fb2k-component
