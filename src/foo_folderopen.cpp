@@ -94,10 +94,14 @@ public:
     }
 
     void on_playback_new_track(metadb_handle_ptr track) override {
+        console::print("foo_folderopen: on_playback_new_track fired");
         if (g_expanding || track.is_empty()) return;
-
+        
         static_api_ptr_t<playlist_manager> pm;
         const t_size playlist = pm->get_active_playlist();
+        console::printf("foo_folderopen: active playlist = %u", (unsigned)playlist);
+console::printf("foo_folderopen: item count = %u",
+    (unsigned)pm->playlist_get_item_count(playlist));
         if (playlist == pfc::infinite_size) return;
 
         // The key heuristic: Explorer opening one file creates/replaces a playlist
@@ -111,6 +115,7 @@ public:
         if (strcmp(track->get_path(), only->get_path()) != 0) return;
 
         const std::wstring clicked = utf8_to_wide(track->get_path());
+        console::printf("foo_folderopen: raw path = %s", track->get_path());
         if (clicked.empty()) return;
 
        // Allow local file:// paths, but ignore other URI-style streams.
@@ -134,6 +139,7 @@ while (!localPath.empty() && localPath.front() == L'/') {
         if (folder.empty()) return;
 
         const auto files = enumerate_audio_files(folder);
+        console::printf("foo_folderopen: found %u files", (unsigned)files.size());
         if (files.size() <= 1) return;
 
         metadb_handle_list handles;
