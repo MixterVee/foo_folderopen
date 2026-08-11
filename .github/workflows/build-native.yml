@@ -2,7 +2,6 @@ name: Build Native foo_folderopen
 
 on:
   push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -18,28 +17,28 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/reupen/foobar2000-sdk-unmodified.git sdk
 
-      - name: Show SDK layout
-        shell: pwsh
-        run: |
-          Get-ChildItem sdk
-          Get-ChildItem sdk\foobar2000
-
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
 
-            - name: Build SDK libraries
+      - name: Build PFC
         shell: pwsh
         run: |
-          msbuild sdk\pfc\pfc.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$PWD\sdk\pfc\x64\Release\"
+          msbuild "sdk\pfc\pfc.vcxproj" /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$env:GITHUB_WORKSPACE\sdk\pfc\x64\Release\"
 
-          msbuild sdk\foobar2000\SDK\foobar2000_SDK.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$PWD\sdk\foobar2000\SDK\x64\Release\"
+      - name: Build foobar2000 SDK
+        shell: pwsh
+        run: |
+          msbuild "sdk\foobar2000\SDK\foobar2000_SDK.vcxproj" /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$env:GITHUB_WORKSPACE\sdk\foobar2000\SDK\x64\Release\"
 
-          msbuild sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$PWD\sdk\foobar2000\foobar2000_component_client\x64\Release\"
+      - name: Build component client
+        shell: pwsh
+        run: |
+          msbuild "sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj" /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$env:GITHUB_WORKSPACE\sdk\foobar2000\foobar2000_component_client\x64\Release\"
 
       - name: Build foo_folderopen
         shell: pwsh
         run: |
-          msbuild foo_folderopen.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:BuildProjectReferences=false
+          msbuild "foo_folderopen.vcxproj" /m /p:Configuration=Release /p:Platform=x64 /p:BuildProjectReferences=false
 
       - name: Package fb2k-component
         shell: pwsh
