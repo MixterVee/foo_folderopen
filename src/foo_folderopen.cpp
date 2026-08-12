@@ -12,19 +12,6 @@ namespace {
 
 bool g_expanding = false;
 
-bool is_audio_extension(const std::wstring& ext) {
-    static const wchar_t* exts[] = {
-        L".mp3", L".flac", L".wav", L".wave", L".aiff", L".aif",
-        L".m4a", L".mp4", L".aac", L".ogg", L".oga", L".opus",
-        L".wv", L".mpc", L".ape", L".tak", L".tta", L".weba"
-    };
-
-    for (auto* e : exts) {
-        if (_wcsicmp(ext.c_str(), e) == 0) return true;
-    }
-    return false;
-}
-
 std::wstring utf8_to_wide(const char* s) {
     if (!s || !*s) return {};
 
@@ -74,16 +61,6 @@ std::wstring parent_folder(const std::wstring& path) {
     return path.substr(0, pos);
 }
 
-std::wstring file_extension(const std::wstring& path) {
-    const auto slash = path.find_last_of(L"\\/");
-    const auto dot = path.find_last_of(L'.');
-
-    if (dot == std::wstring::npos) return {};
-    if (slash != std::wstring::npos && dot < slash) return {};
-
-    return path.substr(dot);
-}
-
 std::wstring foobar_path_to_local(const std::wstring& input) {
     std::wstring path = input;
 
@@ -102,11 +79,23 @@ std::wstring foobar_path_to_local(const std::wstring& input) {
     return path;
 }
 
-std::vector<std::wstring> enumerate_audio_files(const std::wstring& folder) {
+bool foobar_supports_path(const std::wstring& path) {
+    const std::string utf8 = wide_to_utf8(path);
+    if (utf8.empty()) return false;
+
+    // Ask foobar2000's registered input services whether this path is
+    // supported. This automatically includes decoder components installed
+    // by the user, rather than maintaining our own extension list.
+    return input_entry::g_is_supported_path(utf8.c_str());
+}
+
+std::vector<std::wstring> enumerate_playable_files(const std::wstring& folder) {
     std::vector<std::wstring> result;
 
     std::wstring pattern = folder;
-    if (!pattern.empty() && pattern.back() != L'\\') pattern += L'\\';
+    if (!pattern.empty() && pattern.back() != L'\\') {
+        pattern += L'\\';
+    }
     pattern += L"*";
 
     WIN32_FIND_DATAW fd{};
@@ -117,11 +106,7 @@ std::vector<std::wstring> enumerate_audio_files(const std::wstring& folder) {
     }
 
     do {
-        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
-
-        std::wstring name = fd.cFileName;
-
-        if (!is_audio_extension(file_extension(name))) {
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             continue;
         }
 
@@ -131,13 +116,20 @@ std::vector<std::wstring> enumerate_audio_files(const std::wstring& folder) {
             full += L'\\';
         }
 
-        full += name;
+        full += fd.cFileName;
+
+        if (!foobar_supports_path(full)) {
+            continue;
+        }
+
         result.push_back(std::move(full));
 
     } while (FindNextFileW(h, &fd));
 
     FindClose(h);
 
+    // Windows Explorer-style natural filename order:
+    // 1, 2, 3 ... 10 rather than 1, 10, 2.
     std::sort(
         result.begin(),
         result.end(),
@@ -150,9 +142,7 @@ std::vector<std::wstring> enumerate_audio_files(const std::wstring& folder) {
 }
 
 void preload_metadata_later(metadb_handle_list handles) {
-    // We are called from a playback callback. The SDK recommends deferring
-    // operations which can dispatch callbacks / start UI work until after
-    // the current global callback has returned.
+    // Defer metadata loading until after the playback callback has returned.
     fb2k::inMainThread([handles]() mutable {
         try {
             static_api_ptr_t<metadb_io_v2> metaio;
@@ -205,8 +195,8 @@ public:
             static_cast<unsigned>(itemCount)
         );
 
-        // Only expand the Explorer-style case where foobar has received
-        // one file and created/replaced the active playlist with that item.
+        // Explorer opening one file normally gives foobar a one-item playlist.
+        // Leave ordinary multi-item playlist playback alone.
         if (itemCount != 1) {
             console::print("foo_folderopen: not a one-item playlist; ignoring");
             return;
@@ -238,7 +228,7 @@ public:
             return;
         }
 
-        // Ignore streams, but allow local file:// paths.
+        // Ignore internet streams, but allow local file:// paths.
         if (rawPath.find(L"://") != std::wstring::npos &&
             rawPath.rfind(L"file://", 0) != 0) {
             console::print("foo_folderopen: non-local URI; ignoring");
@@ -259,10 +249,10 @@ public:
             folderUtf8.c_str()
         );
 
-        const auto files = enumerate_audio_files(folder);
+        const auto files = enumerate_playable_files(folder);
 
         console::printf(
-            "foo_folderopen: found %u files",
+            "foo_folderopen: found %u foobar-supported files",
             static_cast<unsigned>(files.size())
         );
 
@@ -349,16 +339,13 @@ public:
                 bit_array_true()
             );
 
-            // Do not call playlist_execute_default_action() here.
-            // The clicked track is already playing. Starting playback again
-            // from inside on_playback_new_track() caused the earlier crash.
+            // The originally clicked track is already playing. Do not
+            // re-enter playback from inside on_playback_new_track().
             console::printf(
                 "foo_folderopen: folder loaded; keeping current playback at item %u",
                 static_cast<unsigned>(clickedIndex)
             );
 
-            // Ask foobar to read Artist / Album / Title / Duration after
-            // this playback callback has returned.
             preload_metadata_later(handles);
         }
         catch (...) {
@@ -401,12 +388,12 @@ static initquit_factory_t<folderopen_initquit> g_initquit_factory;
 
 DECLARE_COMPONENT_VERSION(
     "Folder Open",
-    "0.2.2",
-    "When playback begins from a one-item local playlist, "
-    "populate the playlist with audio files from the same folder, "
-    "keep the originally selected file playing, and preload metadata "
-    "for the other folder tracks.\n\n"
-    "Prototype for foobar2000 v2.x."
+    "1.0.0",
+    "Open one local audio file from Windows Explorer and automatically "
+    "populate the active playlist with every file in the same folder that "
+    "foobar2000 can play, while keeping the originally selected track "
+    "playing. Supported formats automatically follow the installed "
+    "foobar2000 input components."
 );
 
 VALIDATE_COMPONENT_FILENAME("foo_folderopen.dll");
