@@ -26,19 +26,34 @@ bool is_audio_extension(const std::wstring& ext) {
 
 std::wstring utf8_to_wide(const char* s) {
     if (!s || !*s) return {};
-    int n = MultiByteToWideChar(CP_UTF8, 0, s, -1, nullptr, 0);
-    if (n <= 1) return {};
-    std::wstring out(static_cast<size_t>(n - 1), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, s, -1, out.data(), n);
+
+    const int needed = MultiByteToWideChar(CP_UTF8, 0, s, -1, nullptr, 0);
+    if (needed <= 1) return {};
+
+    // Allocate room for the terminating NUL, then remove it.
+    std::wstring out(static_cast<size_t>(needed), L'\0');
+    if (MultiByteToWideChar(CP_UTF8, 0, s, -1, out.data(), needed) <= 0) {
+        return {};
+    }
+    out.resize(static_cast<size_t>(needed - 1));
     return out;
 }
 
 std::string wide_to_utf8(const std::wstring& s) {
     if (s.empty()) return {};
-    int n = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (n <= 1) return {};
-    std::string out(static_cast<size_t>(n - 1), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, out.data(), n, nullptr, nullptr);
+
+    const int needed = WideCharToMultiByte(
+        CP_UTF8, 0, s.c_str(), -1, nullptr, 0, nullptr, nullptr
+    );
+    if (needed <= 1) return {};
+
+    // Allocate room for the terminating NUL, then remove it.
+    std::string out(static_cast<size_t>(needed), '\0');
+    if (WideCharToMultiByte(
+            CP_UTF8, 0, s.c_str(), -1, out.data(), needed, nullptr, nullptr) <= 0) {
+        return {};
+    }
+    out.resize(static_cast<size_t>(needed - 1));
     return out;
 }
 
@@ -62,6 +77,7 @@ std::wstring foobar_path_to_local(const std::wstring& input) {
     if (path.rfind(L"file://", 0) == 0) {
         path.erase(0, 7);
 
+        // file:///D:/Music/... -> D:/Music/...
         while (path.size() >= 3 &&
                path[0] == L'/' &&
                !(iswalpha(path[1]) && path[2] == L':')) {
@@ -113,10 +129,6 @@ public:
         console::print("foo_folderopen: playback callback registered");
     }
 
-    ~folderopen_callback() {
-        console::print("foo_folderopen: playback callback unregistering");
-    }
-
     void on_playback_new_track(metadb_handle_ptr track) override {
         console::print("foo_folderopen: on_playback_new_track fired");
 
@@ -131,8 +143,6 @@ public:
         }
 
         const t_size itemCount = pm->playlist_get_item_count(playlist);
-
-        console::printf("foo_folderopen: active playlist = %u", (unsigned)playlist);
         console::printf("foo_folderopen: item count = %u", (unsigned)itemCount);
 
         if (itemCount != 1) {
@@ -154,10 +164,7 @@ public:
         console::printf("foo_folderopen: raw path = %s", track->get_path());
 
         const std::wstring rawPath = utf8_to_wide(track->get_path());
-        if (rawPath.empty()) {
-            console::print("foo_folderopen: empty path");
-            return;
-        }
+        if (rawPath.empty()) return;
 
         if (rawPath.find(L"://") != std::wstring::npos &&
             rawPath.rfind(L"file://", 0) != 0) {
@@ -167,11 +174,7 @@ public:
 
         const std::wstring localPath = foobar_path_to_local(rawPath);
         const std::wstring folder = parent_folder(localPath);
-
-        if (folder.empty()) {
-            console::print("foo_folderopen: could not determine parent folder");
-            return;
-        }
+        if (folder.empty()) return;
 
         const std::string folderUtf8 = wide_to_utf8(folder);
         console::printf("foo_folderopen: folder = %s", folderUtf8.c_str());
@@ -204,13 +207,8 @@ public:
         console::printf("foo_folderopen: created %u playlist handles",
             (unsigned)handles.get_count());
 
-        if (handles.get_count() <= 1) {
-            console::print("foo_folderopen: not enough playlist handles");
-            return;
-        }
-
-        if (clickedIndex == pfc::infinite_size) {
-            console::print("foo_folderopen: clicked file not found in folder list");
+        if (handles.get_count() <= 1 || clickedIndex == pfc::infinite_size) {
+            console::print("foo_folderopen: could not build folder playlist");
             return;
         }
 
@@ -242,10 +240,16 @@ public:
                 bit_array_true()
             );
 
-            console::printf("foo_folderopen: starting playlist item %u",
-                (unsigned)clickedIndex);
-
-            pm->playlist_execute_default_action(playlist, clickedIndex);
+            // IMPORTANT:
+            // Do NOT start playback again here. We are already inside
+            // on_playback_new_track(), and the originally clicked file is
+            // already playing. Re-entering playback from this callback was
+            // causing instability. We only rebuild/focus the playlist and
+            // let the current playback continue uninterrupted.
+            console::printf(
+                "foo_folderopen: folder loaded; keeping current playback at item %u",
+                (unsigned)clickedIndex
+            );
         }
         catch (...) {
             console::print("foo_folderopen: exception while expanding folder");
@@ -261,7 +265,6 @@ class folderopen_initquit : public initquit {
 public:
     void on_init() override {
         console::print("foo_folderopen: component initialized");
-
         if (g_callback == nullptr) {
             g_callback = new folderopen_callback();
         }
@@ -269,7 +272,6 @@ public:
 
     void on_quit() override {
         console::print("foo_folderopen: component shutting down");
-
         delete g_callback;
         g_callback = nullptr;
     }
@@ -281,10 +283,10 @@ static initquit_factory_t<folderopen_initquit> g_initquit_factory;
 
 DECLARE_COMPONENT_VERSION(
     "Folder Open",
-    "0.2.0",
+    "0.2.1",
     "When playback begins from a one-item local playlist, "
     "populate the playlist with audio files from the same folder "
-    "and keep playing the originally selected file.\n\n"
+    "and keep the originally selected file playing.\n\n"
     "Prototype for foobar2000 v2.x."
 );
 
