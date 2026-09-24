@@ -54,6 +54,10 @@ Files are sorted using Windows natural filename ordering. Metadata is loaded asy
 
 The repository includes a GitHub Actions workflow that builds the x64 component against the foobar2000 SDK.
 
+## Support / Discussion
+
+Hydrogenaudio forum thread: https://hydrogenaudio.org/index.php/topic,129942.0.html
+
 ## Version
 
 Current release: **1.0.0**
