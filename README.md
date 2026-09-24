@@ -1,42 +1,63 @@
 # foo_folderopen
 
-Native foobar2000 component prototype.
+**Folder Open** is a native foobar2000 component for people who browse music in Windows Explorer.
 
-## Intended behavior
+Double-click one audio file and foobar2000 will:
 
-When Windows Explorer opens one audio file in foobar2000:
-
-1. foobar2000 starts the selected file normally.
-2. `foo_folderopen` notices that the active playlist contains exactly one item.
-3. It scans that item's folder.
-4. It replaces the one-item playlist with the other audio files in that folder.
-5. It keeps the originally opened file selected and starts it again.
+- start the file you selected
+- populate the active playlist with the other playable files in the same folder
+- keep the originally selected track playing and focused
+- sort the folder naturally by filename
+- load metadata and durations for the added tracks
+- use foobar2000's own registered input services to decide which file formats are supported
 
 No helper EXE is required.
 
-## Prototype limitation
+## Requirements
 
-Version 0.1 intentionally uses a conservative list of common audio extensions.
-It also expands any *one-item active playlist when playback begins*, not only
-Explorer launches. That distinction can be tightened later if needed.
+- Windows
+- foobar2000 v2.x 64-bit
+- Tested with foobar2000 v2.25.10 x64
+
+## Installation
+
+1. Download the latest `foo_folderopen.fb2k-component` from the GitHub Releases page.
+2. In foobar2000, open **File > Preferences > Components**.
+3. Click **Install...**
+4. Select `foo_folderopen.fb2k-component`.
+5. Apply the change and restart foobar2000.
+
+## Usage
+
+In Windows Explorer, double-click an audio file that is associated with foobar2000.
+
+Example:
+
+```text
+Album Folder
+├─ 01 - Track One.flac
+├─ 02 - Track Two.flac
+├─ 03 - Track Three.flac   <- double-click
+├─ 04 - Track Four.flac
+└─ 05 - Track Five.flac
+```
+
+foobar2000 will play **03 - Track Three.flac** and populate the playlist with the other supported audio files from that folder.
+
+## Notes
+
+Folder Open is designed around the Windows Explorer double-click workflow. Internally, version 1.0.0 expands a local track when playback begins from a one-item active playlist, so other one-item-playlist workflows may also trigger folder expansion.
+
+Files are sorted using Windows natural filename ordering. Metadata is loaded asynchronously after the folder is added.
 
 ## Build
 
-The GitHub Actions workflow downloads the official foobar2000 SDK 2025-03-07
-and builds an x64 component with Visual Studio/MSBuild.
+The repository includes a GitHub Actions workflow that builds the x64 component against the foobar2000 SDK.
 
-The build artifact is:
+## Version
 
-`foo_folderopen.fb2k-component`
+Current release: **1.0.0**
 
-## Test
+## License
 
-Install the component in:
-
-`foobar2000 > File > Preferences > Components > Install...`
-
-Restart foobar2000.
-
-Then double-click a song in Windows Explorer from a folder containing several
-audio files. The entire folder should appear in the playlist, while the song
-you double-clicked remains the playing track.
+MIT License. See [LICENSE](LICENSE).
