@@ -58,7 +58,9 @@ jobs:
             Remove-Item "foo_folderopen.fb2k-component" -Force
           }
 
-          7z a -tzip foo_folderopen.zip ".\stage\x64\foo_folderopen.dll"
+          # Preserve the top-level x64 folder. The foobar2000 component
+          # repository uses package paths to detect supported architectures.
+          Compress-Archive -Path "stage\x64" -DestinationPath "foo_folderopen.zip" -Force
           Rename-Item foo_folderopen.zip foo_folderopen.fb2k-component
 
       - name: Upload component
