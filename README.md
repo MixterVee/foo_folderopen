@@ -60,7 +60,7 @@ Hydrogenaudio forum thread: https://hydrogenaudio.org/index.php/topic,129942.0.h
 
 ## Version
 
-Current release: **1.0.0**
+Current release: **1.0.1**
 
 ## License
 
