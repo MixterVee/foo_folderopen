@@ -388,7 +388,7 @@ static initquit_factory_t<folderopen_initquit> g_initquit_factory;
 
 DECLARE_COMPONENT_VERSION(
     "Folder Open",
-    "1.0.1",
+    "1.0.2",
     "Open one local audio file from Windows Explorer and automatically "
     "populate the active playlist with every file in the same folder that "
     "foobar2000 can play, while keeping the originally selected track "
