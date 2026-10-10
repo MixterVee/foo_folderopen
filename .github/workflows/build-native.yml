@@ -35,32 +35,54 @@ jobs:
         run: |
           msbuild "sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj" /m /p:Configuration=Release /p:Platform=x64 /p:OutDir="$env:GITHUB_WORKSPACE\sdk\foobar2000\foobar2000_component_client\x64\Release\"
 
-      - name: Build foo_folderopen
+      - name: Build PFC Win32
+        shell: pwsh
+        run: |
+          msbuild "sdk\pfc\pfc.vcxproj" /m /p:Configuration=Release /p:Platform=Win32 /p:OutDir="$env:GITHUB_WORKSPACE\sdk\pfc\Win32\Release\"
+
+      - name: Build foobar2000 SDK Win32
+        shell: pwsh
+        run: |
+          msbuild "sdk\foobar2000\SDK\foobar2000_SDK.vcxproj" /m /p:Configuration=Release /p:Platform=Win32 /p:OutDir="$env:GITHUB_WORKSPACE\sdk\foobar2000\SDK\Win32\Release\"
+
+      - name: Build component client Win32
+        shell: pwsh
+        run: |
+          msbuild "sdk\foobar2000\foobar2000_component_client\foobar2000_component_client.vcxproj" /m /p:Configuration=Release /p:Platform=Win32 /p:OutDir="$env:GITHUB_WORKSPACE\sdk\foobar2000\foobar2000_component_client\Win32\Release\"
+
+      - name: Build foo_folderopen x64
         shell: pwsh
         run: |
           msbuild "foo_folderopen.vcxproj" /m /p:Configuration=Release /p:Platform=x64 /p:BuildProjectReferences=false
+
+      - name: Build foo_folderopen Win32
+        shell: pwsh
+        run: |
+          msbuild "foo_folderopen.vcxproj" /m /p:Configuration=Release /p:Platform=Win32 /p:BuildProjectReferences=false
 
       - name: Package fb2k-component
         shell: pwsh
         run: |
           if (!(Test-Path "out\x64\foo_folderopen.dll")) {
-            throw "Built DLL not found."
+            throw "Built x64 DLL not found."
+          }
+          if (!(Test-Path "out\Win32\foo_folderopen.dll")) {
+            throw "Built Win32 DLL not found."
           }
 
+          Remove-Item "stage" -Recurse -Force -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Path "stage\x64" -Force | Out-Null
+
+          # 32-bit component DLL belongs at the package root.
+          Copy-Item "out\Win32\foo_folderopen.dll" "stage\foo_folderopen.dll"
+
+          # 64-bit component DLL belongs in the x64 subdirectory.
           Copy-Item "out\x64\foo_folderopen.dll" "stage\x64\foo_folderopen.dll"
 
-          if (Test-Path "foo_folderopen.zip") {
-            Remove-Item "foo_folderopen.zip" -Force
-          }
+          Remove-Item "foo_folderopen.zip" -Force -ErrorAction SilentlyContinue
+          Remove-Item "foo_folderopen.fb2k-component" -Force -ErrorAction SilentlyContinue
 
-          if (Test-Path "foo_folderopen.fb2k-component") {
-            Remove-Item "foo_folderopen.fb2k-component" -Force
-          }
-
-          # Preserve the top-level x64 folder. The foobar2000 component
-          # repository uses package paths to detect supported architectures.
-          Compress-Archive -Path "stage\x64" -DestinationPath "foo_folderopen.zip" -Force
+          Compress-Archive -Path "stage\*" -DestinationPath "foo_folderopen.zip" -Force
           Rename-Item foo_folderopen.zip foo_folderopen.fb2k-component
 
       - name: Upload component
