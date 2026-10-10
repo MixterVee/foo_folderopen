@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
@@ -16,6 +20,13 @@
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
@@ -27,6 +38,12 @@
 
   <ImportGroup Label="ExtensionSettings" />
 
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
+            Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
+            Label="LocalAppDataPlatform" />
+  </ImportGroup>
+
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
             Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
@@ -35,6 +52,14 @@
 
   <PropertyGroup Label="UserMacros" />
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)out\Win32\</OutDir>
+    <IntDir>$(ProjectDir)int\Win32\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>foo_folderopen</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)out\x64\</OutDir>
     <IntDir>$(ProjectDir)int\x64\</IntDir>
@@ -42,6 +67,49 @@
     <TargetName>foo_folderopen</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalOptions>/d2notypeopt %(AdditionalOptions)</AdditionalOptions>
+      <TreatSpecificWarningsAsErrors>4715</TreatSpecificWarningsAsErrors>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <StringPooling>true</StringPooling>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>sdk\foobar2000;sdk;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <PreprocessorDefinitions>NDEBUG;_WINDLL;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+
+   <Link>
+  <GenerateDebugInformation>true</GenerateDebugInformation>
+  <SubSystem>Windows</SubSystem>
+  <OptimizeReferences>true</OptimizeReferences>
+  <EnableCOMDATFolding>true</EnableCOMDATFolding>
+  <RandomizedBaseAddress>false</RandomizedBaseAddress>
+
+  <AdditionalLibraryDirectories>
+    sdk\foobar2000\SDK\Win32\Release;
+    sdk\foobar2000\foobar2000_component_client\Win32\Release;
+    sdk\pfc\Win32\Release;
+    sdk\foobar2000\shared;
+    %(AdditionalLibraryDirectories)
+  </AdditionalLibraryDirectories>
+
+  <AdditionalDependencies>
+    foobar2000_SDK.lib;
+    foobar2000_component_client.lib;
+    pfc.lib;
+    shared-Win32.lib;
+    shlwapi.lib;
+    %(AdditionalDependencies)
+  </AdditionalDependencies>
+</Link>
+  </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
