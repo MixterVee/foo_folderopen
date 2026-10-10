@@ -16,7 +16,7 @@ No helper EXE is required.
 ## Requirements
 
 - Windows
-- foobar2000 v2.x 64-bit
+- foobar2000 v2.x (32-bit or 64-bit)
 - Tested with foobar2000 v2.25.10 x64
 
 ## Installation
@@ -60,7 +60,7 @@ Hydrogenaudio forum thread: https://hydrogenaudio.org/index.php/topic,129942.0.h
 
 ## Version
 
-Current release: **1.0.1**
+Current release: **1.0.2**
 
 ## License
 
